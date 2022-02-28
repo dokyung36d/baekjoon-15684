@@ -1,0 +1,100 @@
+from collections import deque
+import sys
+
+n, m, h=map(int, sys.stdin.readline().split())
+
+width_list=[[0]*(n-1) for _ in range(h)] #h*(n-1) 행렬
+
+for _ in range(m):
+    w_row, w_col=map(int, sys.stdin.readline().split())
+    width_list[w_row-1][w_col-1]=1 #가로선이 들어있는 부분은 1, 아니면 0
+#결국 내려가는 횟수는 h로 동일하다.
+
+def find_result(information: list):
+    falsed=0
+    result_list=[]
+    for j in range(n): #여기서 j는 col을 의미, 시작 지점
+        each_passed=[[0, j]]
+        current_col=j
+
+        for i in range(h):
+            if 0<=current_col<n-1: 
+                if information[i][current_col]==1:
+                    current_col+=1
+
+            if current_col-1>=0:
+                if information[i][current_col-1]==1:
+                    current_col-=1
+            
+            else: #좌우로 이동하는 것이 불가능
+                continue
+
+        result_list.append(current_col)
+        if current_col!=j:
+            falsed+=1
+    
+    if falsed==0:
+        return 1 #성공을 의미
+    else:
+        return result_list
+
+def left_okay(information, row, col): #좌측에 가로선을 세우는 것이 가능
+    copied=[]
+    for _ in range(h):
+        copied.append(information[_])
+
+    if 0<=col<n-1:
+        if copied[row][col+1]==1:
+            return False
+    
+    return True
+
+def right_okay(information, row, col):
+    copied=[]
+    for _ in range(h):
+        copied.append(information[_])
+
+    if col-1>=0: #좌측 확인
+        if copied[row][col-1]==1:
+            return False
+    
+    return True
+        
+
+raw_result=find_result(width_list)
+
+success=0
+
+queue=deque()
+queue.append([width_list, [0, 0], 0]) #중간에 list는 지금까지 탐색한 위치, 뒤의 0은 총 가로선을 더한 갯수
+
+while queue:
+    x=queue.popleft()
+
+    if x[2]>=2:
+        continue
+
+    copied_info=[]
+    for i in range(h):
+        copied_info.append(x[0][i])
+    
+    now_row, now_col=x[1][0], x[1][1]
+
+    if right_okay(x[0], now_row, now_col)==True:
+        copied_info[now_row][now_col+1]=1 #우측에 가로선을 만들기 성공
+        
+        if find_result(copied_info)==1:
+            print(x[2]+1) #성공하면 멈춤
+            success+=1
+            break
+        
+        else:
+            if now_col==n-1:
+                if now_row+1<h:
+                    queue.append([copied_info, [now_row+1, now_col], x[2]+1])
+            else:
+                queue.append([copied_info, [now_row, now_col+1], x[2]+1])
+
+
+if success==0:
+    print(-1)
